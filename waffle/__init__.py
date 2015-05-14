@@ -16,14 +16,31 @@ class DoesNotExist(object):
 
 
 def set_flag(request, flag_name, active=True, session_only=False):
-    """Set a flag value on a request object."""
+    from .compat import cache
+    from .models import cache_flag, Flag, UserFeatureFlags
+
+    """Set a flag value on a request object and the user (if authenticated)."""
     if not hasattr(request, 'waffles'):
         request.waffles = {}
     request.waffles[flag_name] = [active, session_only]
 
+    """Set a flag on the user object if authenticated"""
+    if request.user.is_authenticated():
+        flag = cache.get(keyfmt(get_setting('FLAG_CACHE_KEY'), flag_name))
+        if flag is None:
+            flag = Flag.objects.get(name=flag_name)
+            cache_flag(instance=flag)
+
+        userFlagInfo, created = UserFeatureFlags.objects.get_or_create(
+            user=request.user, flag=flag, defaults={'is_active': active}
+        )
+        if not created and userFlagInfo.is_active != active:
+            userFlagInfo.is_active=active
+            userFlagInfo.save()
+
 
 def flag_is_active(request, flag_name):
-    from .models import cache_flag, Flag
+    from .models import cache_flag, Flag, UserFeatureFlags
     from .compat import cache
 
     flag = cache.get(keyfmt(get_setting('FLAG_CACHE_KEY'), flag_name))
@@ -95,11 +112,29 @@ def flag_is_active(request, flag_name):
         elif flag_name in request.waffles:
             return request.waffles[flag_name][0]
 
+        flag_active_on_cookie = None
+        flag_active_on_user = None
+
         cookie = get_setting('COOKIE') % flag_name
         if cookie in request.COOKIES:
-            flag_active = (request.COOKIES[cookie] == 'True')
-            set_flag(request, flag_name, flag_active, flag.rollout)
-            return flag_active
+            flag_active_on_cookie = (request.COOKIES[cookie] == 'True')
+
+        if request.user.is_authenticated():
+            try:
+                flag_active_on_user = flag.userfeatureflags_set.get(user=request.user).is_active
+            except UserFeatureFlags.DoesNotExist:
+                pass
+
+        if flag_active_on_user is not None and flag_active_on_cookie is not None:
+            if flag_active_on_user != flag_active_on_cookie:
+                set_flag(request, flag_name, flag_active_on_user, flag.rollout)
+            return flag_active_on_user
+        elif flag_active_on_user is not None:
+            set_flag(request, flag_name, flag_active_on_user, flag.rollout)
+            return flag_active_on_user
+        elif flag_active_on_cookie is not None:
+            set_flag(request, flag_name, flag_active_on_cookie, flag.rollout)
+            return flag_active_on_cookie
 
         if Decimal(str(random.uniform(0, 100))) <= flag.percent:
             set_flag(request, flag_name, True, flag.rollout)

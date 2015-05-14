@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from waffle.models import Flag, Sample, Switch
+from waffle.models import Flag, Sample, Switch, UserFeatureFlags
 
 
 def enable_for_all(ma, request, qs):
@@ -27,6 +27,11 @@ class FlagAdmin(admin.ModelAdmin):
     list_filter = ('everyone', 'superusers', 'staff', 'authenticated')
     raw_id_fields = ('users', 'groups')
     ordering = ('-id',)
+
+
+class UserFeatureFlagsAdmin(admin.ModelAdmin):
+    list_display = 'user', 'flag', 'is_active'
+    raw_id_fields = ('user',)
 
 
 def enable_switches(ma, request, qs):
@@ -60,3 +65,4 @@ class SampleAdmin(admin.ModelAdmin):
 admin.site.register(Flag, FlagAdmin)
 admin.site.register(Sample, SampleAdmin)
 admin.site.register(Switch, SwitchAdmin)
+admin.site.register(UserFeatureFlags, UserFeatureFlagsAdmin)

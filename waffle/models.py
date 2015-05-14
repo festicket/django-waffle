@@ -50,12 +50,23 @@ class Flag(models.Model):
     modified = models.DateTimeField(default=datetime.now, help_text=(
         'Date when this Flag was last modified.'))
 
+    on_or_off_for_users = models.ManyToManyField(AUTH_USER_MODEL, through='UserFeatureFlags', related_name="on_or_off_for_users")
+
     def __unicode__(self):
         return self.name
 
     def save(self, *args, **kwargs):
         self.modified = datetime.now()
         super(Flag, self).save(*args, **kwargs)
+
+
+class UserFeatureFlags(models.Model):
+    user = models.ForeignKey(AUTH_USER_MODEL)
+    flag = models.ForeignKey(Flag)
+    is_active = models.BooleanField()
+
+    class Meta:
+        unique_together = ('user', 'flag',)
 
 
 class Switch(models.Model):
