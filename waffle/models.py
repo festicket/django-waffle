@@ -63,7 +63,7 @@ class Flag(models.Model):
 class UserFeatureFlags(models.Model):
     user = models.ForeignKey(AUTH_USER_MODEL)
     flag = models.ForeignKey(Flag)
-    is_active = models.BooleanField()
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         unique_together = ('user', 'flag',)
