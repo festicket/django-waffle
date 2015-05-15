@@ -4,7 +4,7 @@ from south.db import db
 from south.v2 import SchemaMigration
 from django.db import models
 
- 
+
 import django
 
 # Django 1.5+ compatibility
@@ -23,10 +23,10 @@ class Migration(SchemaMigration):
         # Adding model 'UserFeatureFlags'
         db.create_table(u'waffle_userfeatureflags', (
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            # ('user', self.gf('django.db.models.fields.related.ForeignKey')(to="orm['auth.User']")),
+            # ('user', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['auth.User'])),
             ('user', models.ForeignKey(get_user_model(), null=False)),
             ('flag', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['waffle.Flag'])),
-            ('is_active', self.gf('django.db.models.fields.BooleanField')()),
+            ('is_active', self.gf('django.db.models.fields.BooleanField')(default=True)),
         ))
         db.send_create_signal(u'waffle', ['UserFeatureFlags'])
 
@@ -56,20 +56,20 @@ class Migration(SchemaMigration):
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '50'})
         },
-        'auth.user': {
+        u'auth.user': {
             'Meta': {'object_name': 'User'},
             'date_joined': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'email': ('django.db.models.fields.EmailField', [], {'max_length': '75', 'blank': 'True'}),
             'first_name': ('django.db.models.fields.CharField', [], {'max_length': '30', 'blank': 'True'}),
-            'groups': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['auth.Group']", 'symmetrical': 'False', 'blank': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'groups': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'related_name': "u'user_set'", 'blank': 'True', 'to': u"orm['auth.Group']"}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'is_active': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
             'is_staff': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'is_superuser': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'last_login': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'last_name': ('django.db.models.fields.CharField', [], {'max_length': '30', 'blank': 'True'}),
             'password': ('django.db.models.fields.CharField', [], {'max_length': '128'}),
-            'user_permissions': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['auth.Permission']", 'symmetrical': 'False', 'blank': 'True'}),
+            'user_permissions': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'related_name': "u'user_set'", 'blank': 'True', 'to': u"orm['auth.Permission']"}),
             'username': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '30'})
         },
         u'contenttypes.contenttype': {
@@ -90,13 +90,13 @@ class Migration(SchemaMigration):
             'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '100'}),
             'note': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'on_or_off_for_users': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'on_or_off_for_users'", 'symmetrical': 'False', 'through': u"orm['waffle.UserFeatureFlags']", 'to': "orm['auth.user']"}),
+            'on_or_off_for_users': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'on_or_off_for_users'", 'symmetrical': 'False', 'through': u"orm['waffle.UserFeatureFlags']", 'to': u"orm['auth.User']"}),
             'percent': ('django.db.models.fields.DecimalField', [], {'null': 'True', 'max_digits': '3', 'decimal_places': '1', 'blank': 'True'}),
             'rollout': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'staff': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'superusers': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
             'testing': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'users': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['auth.User']", 'symmetrical': 'False', 'blank': 'True'})
+            'users': ('django.db.models.fields.related.ManyToManyField', [], {'to': u"orm['auth.User']", 'symmetrical': 'False', 'blank': 'True'})
         },
         u'waffle.sample': {
             'Meta': {'object_name': 'Sample'},
@@ -120,9 +120,9 @@ class Migration(SchemaMigration):
             'Meta': {'unique_together': "(('user', 'flag'),)", 'object_name': 'UserFeatureFlags'},
             'flag': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['waffle.Flag']"}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'is_active': ('django.db.models.fields.BooleanField', [], {}),
-            'user': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['auth.User']"})
-        },
+            'is_active': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
+            'user': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['auth.User']"})
+        }
     }
 
     complete_apps = ['waffle']
