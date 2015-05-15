@@ -40,9 +40,12 @@ def syncdb():
 
 
 def schema():
-    """Create a schema migration for any changes."""
+    """Create a schema migration for any changes in Django <= 1.6."""
     _local('django-admin.py schemamigration waffle --auto')
 
+def make():
+    """Make a schema migration for any changes in Django 1.7+."""
+    _local('django-admin.py makemigrations waffle')
 
 def migrate():
     """Update a testing database with south."""
