@@ -5,13 +5,26 @@ from south.v2 import SchemaMigration
 from django.db import models
 
 
+import django
+
+# Django 1.5+ compatibility
+if django.VERSION >= (1, 5):
+    from django.contrib.auth import get_user_model
+else:
+    from django.contrib.auth.models import User
+
+    def get_user_model():
+        return User
+
+
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
         # Adding model 'UserFeatureFlags'
         db.create_table(u'waffle_userfeatureflags', (
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('user', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['auth.User'])),
+            # ('user', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['auth.User'])),
+            ('user', models.ForeignKey(get_user_model(), null=False)),
             ('flag', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['waffle.Flag'])),
             ('is_active', self.gf('django.db.models.fields.BooleanField')(default=True)),
         ))
