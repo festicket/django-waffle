@@ -135,13 +135,12 @@ def cache_flag(**kwargs):
 
 def uncache_flag(**kwargs):
     flag = kwargs.get('instance')
-    data = {
-        keyfmt(get_setting('FLAG_CACHE_KEY'), flag.name): None,
-        keyfmt(get_setting('FLAG_USERS_CACHE_KEY'), flag.name): None,
-        keyfmt(get_setting('FLAG_GROUPS_CACHE_KEY'), flag.name): None,
-        keyfmt(get_setting('ALL_FLAGS_CACHE_KEY')): None
-    }
-    cache.set_many(data, 5)
+    cache.delete_many([
+        keyfmt(get_setting('FLAG_CACHE_KEY'), flag.name),
+        keyfmt(get_setting('FLAG_USERS_CACHE_KEY'), flag.name),
+        keyfmt(get_setting('FLAG_GROUPS_CACHE_KEY'), flag.name),
+        keyfmt(get_setting('ALL_FLAGS_CACHE_KEY'))
+    ])
 
 post_save.connect(uncache_flag, sender=Flag, dispatch_uid='save_flag')
 post_delete.connect(uncache_flag, sender=Flag, dispatch_uid='delete_flag')
