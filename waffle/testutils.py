@@ -1,6 +1,6 @@
 from functools import wraps
 
-from waffle.models import Flag, Switch, Sample
+from waffle.models import Flag, Switch, Sample, uncache_flag
 
 
 __all__ = ['override_flag', 'override_sample', 'override_switch']
@@ -75,7 +75,10 @@ class override_flag(_overrider):
     cls = Flag
 
     def update(self, active):
-        self.cls.objects.filter(pk=self.obj.pk).update(everyone=active)
+        flags = self.cls.objects.filter(pk=self.obj.pk)
+        flags.update(everyone=active)
+        for flag in flags:
+            uncache_flag(instance=flag)
 
     def get_value(self):
         return self.obj.everyone
