@@ -10,3 +10,5 @@ dist
 .settings
 docs/_*
 .tox
+.idea
+
