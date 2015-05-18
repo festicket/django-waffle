@@ -124,13 +124,12 @@ def cache_flag(**kwargs):
 
 def uncache_flag(**kwargs):
     flag = kwargs.get('instance')
-    data = {
-        keyfmt(get_setting('FLAG_CACHE_KEY'), flag.name): None,
-        keyfmt(get_setting('FLAG_USERS_CACHE_KEY'), flag.name): None,
-        keyfmt(get_setting('FLAG_GROUPS_CACHE_KEY'), flag.name): None,
-        keyfmt(get_setting('ALL_FLAGS_CACHE_KEY')): None
-    }
-    cache.set_many(data, 5)
+    cache.delete_many([
+        keyfmt(get_setting('FLAG_CACHE_KEY'), flag.name),
+        keyfmt(get_setting('FLAG_USERS_CACHE_KEY'), flag.name),
+        keyfmt(get_setting('FLAG_GROUPS_CACHE_KEY'), flag.name),
+        keyfmt(get_setting('ALL_FLAGS_CACHE_KEY'))
+    ])
 
 post_save.connect(uncache_flag, sender=Flag, dispatch_uid='save_flag')
 post_delete.connect(uncache_flag, sender=Flag, dispatch_uid='delete_flag')
@@ -147,8 +146,10 @@ def cache_sample(**kwargs):
 
 def uncache_sample(**kwargs):
     sample = kwargs.get('instance')
-    cache.set(keyfmt(get_setting('SAMPLE_CACHE_KEY'), sample.name), None, 5)
-    cache.set(keyfmt(get_setting('ALL_SAMPLES_CACHE_KEY')), None, 5)
+    cache.delete_many([
+        keyfmt(get_setting('SAMPLE_CACHE_KEY'), sample.name),
+        keyfmt(get_setting('ALL_SAMPLES_CACHE_KEY'))
+    ])
 
 post_save.connect(uncache_sample, sender=Sample, dispatch_uid='save_sample')
 post_delete.connect(uncache_sample, sender=Sample,
@@ -162,8 +163,10 @@ def cache_switch(**kwargs):
 
 def uncache_switch(**kwargs):
     switch = kwargs.get('instance')
-    cache.set(keyfmt(get_setting('SWITCH_CACHE_KEY'), switch.name), None, 5)
-    cache.set(keyfmt(get_setting('ALL_SWITCHES_CACHE_KEY')), None, 5)
+    cache.delete_many([
+        keyfmt(get_setting('SWITCH_CACHE_KEY'), switch.name),
+        keyfmt(get_setting('ALL_SWITCHES_CACHE_KEY'))
+    ])
 
 post_delete.connect(uncache_switch, sender=Switch,
                     dispatch_uid='delete_switch')

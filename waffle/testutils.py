@@ -1,6 +1,6 @@
 from functools import wraps
 
-from waffle.models import Flag, Switch, Sample
+from waffle.models import Flag, Switch, Sample, uncache_flag
 
 
 __all__ = ['override_flag', 'override_sample', 'override_switch']
@@ -16,6 +16,7 @@ class _overrider(object):
         def _wrapped(*args, **kwargs):
             with self:
                 return func(*args, **kwargs)
+
         return _wrapped
 
     def get(self):
@@ -65,7 +66,9 @@ class override_switch(_overrider):
     cls = Switch
 
     def update(self, active):
-        self.cls.objects.filter(pk=self.obj.pk).update(active=active)
+        switch = self.cls.objects.get(pk=self.obj.pk)
+        switch.active = active
+        switch.save()
 
     def get_value(self):
         return self.obj.active
@@ -75,7 +78,9 @@ class override_flag(_overrider):
     cls = Flag
 
     def update(self, active):
-        self.cls.objects.filter(pk=self.obj.pk).update(everyone=active)
+        flag = self.cls.objects.get(pk=self.obj.pk)
+        flag.everyone = active
+        flag.save()
 
     def get_value(self):
         return self.obj.everyone
@@ -99,7 +104,9 @@ class override_sample(_overrider):
             p = 0.0
         else:
             p = active
-        self.cls.objects.filter(pk=self.obj.pk).update(percent='{0}'.format(p))
+        sample = self.cls.objects.get(pk=self.obj.pk)
+        sample.percent = '{0}'.format(p)
+        sample.save()
 
     def get_value(self):
         p = self.obj.percent
