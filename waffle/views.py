@@ -24,12 +24,12 @@ def _generate_waffle_js(request):
     switches = cache.get(keyfmt(get_setting('ALL_SWITCHES_CACHE_KEY')))
     if switches is None:
         switches = Switch.objects.values_list('name', 'active')
-        cache.add(keyfmt(get_setting('ALL_SWITCHES_CACHE_KEY')), switches)
+        cache.set(keyfmt(get_setting('ALL_SWITCHES_CACHE_KEY')), switches)
 
     samples = cache.get(keyfmt(get_setting('ALL_SAMPLES_CACHE_KEY')))
     if samples is None:
         samples = Sample.objects.values_list('name', flat=True)
-        cache.add(keyfmt(get_setting('ALL_SAMPLES_CACHE_KEY')), samples)
+        cache.set(keyfmt(get_setting('ALL_SAMPLES_CACHE_KEY')), samples)
     sample_values = [(s, sample_is_active(s)) for s in samples]
 
     return loader.render_to_string('waffle/waffle.js', {
