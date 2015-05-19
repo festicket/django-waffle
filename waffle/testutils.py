@@ -66,9 +66,8 @@ class override_switch(_overrider):
     cls = Switch
 
     def update(self, active):
-        switch = self.cls.objects.get(pk=self.obj.pk)
-        switch.active = active
-        switch.save()
+        self.obj.active = active
+        self.obj.save()
 
     def get_value(self):
         return self.obj.active
@@ -78,9 +77,8 @@ class override_flag(_overrider):
     cls = Flag
 
     def update(self, active):
-        flag = self.cls.objects.get(pk=self.obj.pk)
-        flag.everyone = active
-        flag.save()
+        self.obj.everyone = active
+        self.obj.save()
 
     def get_value(self):
         return self.obj.everyone
@@ -104,9 +102,8 @@ class override_sample(_overrider):
             p = 0.0
         else:
             p = active
-        sample = self.cls.objects.get(pk=self.obj.pk)
-        sample.percent = '{0}'.format(p)
-        sample.save()
+        self.obj.percent = '{0}'.format(p)
+        self.obj.save()
 
     def get_value(self):
         p = self.obj.percent
