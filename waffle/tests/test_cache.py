@@ -61,7 +61,7 @@ class WaffleCacheTests(TestCase):
         self.assertSequenceEqual([('myswitch1', True), ('myswitch2', True)], cached_switches)
         
     def test_cache_all_samples(self):
-        """Test the 'ALL_SWITCHES' list caches correctly."""
+        """Test the 'ALL_SAMPLES' list caches correctly."""
 
         Sample.objects.create(name='mysample1', percent='100.0')
 
