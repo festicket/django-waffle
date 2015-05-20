@@ -62,9 +62,9 @@ def set_excluded(request, flag_name, excluded=True):
     from .compat import cache
     from .models import cache_flag, Flag, UserFeatureFlags
 
-    if not hasattr(request, 'waffles_excluded'):
-        request.waffles_excluded = {}
-    request.waffles_excluded[flag_name] = excluded
+    if not hasattr(request, 'waffle_excludes'):
+        request.waffle_excludes = {}
+    request.waffle_excludes[flag_name] = excluded
 
     """Remember the excluded value for a user if authenticated"""
     if request.user.is_authenticated():
@@ -73,13 +73,13 @@ def set_excluded(request, flag_name, excluded=True):
             flag = Flag.objects.get(name=flag_name)
             cache_flag(instance=flag)
 
-        try:
-            userFlagInfo = UserFeatureFlags.objects.get(user=request.user, flag=flag)
-            if userFlagInfo.is_excluded != excluded:
-                userFlagInfo = excluded
-                userFlagInfo.save()
-        except UserFeatureFlags.DoesNotExist:
-            pass
+        userFlagInfo, created = UserFeatureFlags.objects.get_or_create(
+            user=request.user, flag=flag, defaults={'is_excluded': excluded}
+        )
+        if not created and userFlagInfo.is_excluded != excluded:
+            userFlagInfo.is_excluded = excluded
+            userFlagInfo.save()
+
 
 
 def set_flag(request, flag_name, active=True, session_only=False):

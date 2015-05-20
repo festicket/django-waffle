@@ -3,7 +3,7 @@ from django.shortcuts import render_to_response, render
 from django.template import Context, RequestContext
 from django.template.loader import render_to_string
 
-from waffle import flag_is_active
+from waffle import flag_is_active, flag_is_excluded
 from waffle.decorators import waffle_flag, waffle_switch
 
 
@@ -11,6 +11,11 @@ def flag_in_view(request):
     if flag_is_active(request, 'myflag'):
         return HttpResponse('on')
     return HttpResponse('off')
+
+def flag_excluded_in_view(request):
+    if flag_is_excluded(request, 'myflag'):
+        return HttpResponse('yes')
+    return HttpResponse('no')
 
 
 def flag_in_jingo(request):
