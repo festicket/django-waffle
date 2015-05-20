@@ -25,4 +25,10 @@ class WaffleMiddleware(object):
                 value = request.waffle_tests[k]
                 response.set_cookie(name, value=value)
 
+        if hasattr(request, 'waffle_excluded'):
+            for k in request.waffle_excluded:
+                name = smart_str(get_setting('EXCLUDED_COOKIE') % k)
+                value = request.waffle_excluded[k]
+                response.set_cookie(name, value=value)
+
         return response

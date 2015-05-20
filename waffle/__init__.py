@@ -15,16 +15,83 @@ class DoesNotExist(object):
         return get_setting('SWITCH_DEFAULT')
 
 
-def set_flag(request, flag_name, active=True, session_only=False):
+def flag_is_excluded(request, flag_name):
+    from .models import cache_flag, Flag, UserFeatureFlags
+    from .compat import cache
+
+    flag = cache.get(keyfmt(get_setting('FLAG_CACHE_KEY'), flag_name))
+    if flag is None:
+        try:
+            flag = Flag.objects.get(name=flag_name)
+            cache_flag(instance=flag)
+        except Flag.DoesNotExist:
+            return get_setting('FLAG_DEFAULT')
+
+    flag_excluded_on_cookie = None
+    flag_excluded_on_user = None
+
+    cookie = get_setting('EXCLUDED_COOKIE') % flag_name
+    if cookie in request.COOKIES:
+        flag_excluded_on_cookie = (request.COOKIES[cookie] == 'True')
+
+    if request.user.is_authenticated():
+        try:
+            flag_excluded_on_user = flag.userfeatureflags_set.get(user=request.user).is_excluded
+        except UserFeatureFlags.DoesNotExist:
+            pass
+
+    if flag_excluded_on_user is not None and flag_excluded_on_cookie is not None:
+        if flag_excluded_on_cookie != flag_excluded_on_user:
+            # A True cookie can override a False user model.
+            set_excluded(request, flag_name, True)
+            return True
+        return flag_excluded_on_user
+    elif flag_excluded_on_user is not None:
+        set_excluded(request, flag_name, flag_excluded_on_user)
+        return flag_excluded_on_user
+    elif flag_excluded_on_cookie is not None:
+        set_excluded(request, flag_name, flag_excluded_on_cookie)
+        return flag_excluded_on_cookie
+
+    set_excluded(request, flag_name, False)
+    return False
+
+
+def set_excluded(request, flag_name, excluded=True):
+    """Set a flag excluded value on a request object and the user (if authenticated)."""
     from .compat import cache
     from .models import cache_flag, Flag, UserFeatureFlags
 
+    if not hasattr(request, 'waffles_excluded'):
+        request.waffles_excluded = {}
+    request.waffles_excluded[flag_name] = excluded
+
+    """Remember the excluded value for a user if authenticated"""
+    if request.user.is_authenticated():
+        flag = cache.get(keyfmt(get_setting('FLAG_CACHE_KEY'), flag_name))
+        if flag is None:
+            flag = Flag.objects.get(name=flag_name)
+            cache_flag(instance=flag)
+
+        try:
+            userFlagInfo = UserFeatureFlags.objects.get(user=request.user, flag=flag)
+            if userFlagInfo.is_excluded != excluded:
+                userFlagInfo = excluded
+                userFlagInfo.save()
+        except UserFeatureFlags.DoesNotExist:
+            pass
+
+
+def set_flag(request, flag_name, active=True, session_only=False):
     """Set a flag value on a request object and the user (if authenticated)."""
+    from .compat import cache
+    from .models import cache_flag, Flag, UserFeatureFlags
+
     if not hasattr(request, 'waffles'):
         request.waffles = {}
     request.waffles[flag_name] = [active, session_only]
 
-    """Set a flag on the user object if authenticated"""
+    """Remember the flag value for a user if authenticated"""
     if request.user.is_authenticated():
         flag = cache.get(keyfmt(get_setting('FLAG_CACHE_KEY'), flag_name))
         if flag is None:

@@ -64,6 +64,8 @@ class UserFeatureFlags(models.Model):
     user = models.ForeignKey(AUTH_USER_MODEL)
     flag = models.ForeignKey(Flag)
     is_active = models.BooleanField(default=True)
+    is_excluded = models.BooleanField(default=False,
+                                   help_text='Has the user been excluded from the A/B test?')
 
     class Meta:
         unique_together = ('user', 'flag',)
