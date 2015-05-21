@@ -92,7 +92,7 @@ class UserFeatureFlagTests(TestCase):
         """Test the 'testing' switch overrides the flag value of a user"""
         user = User.objects.create(username='foo')
         flag = Flag.objects.create(name='myflag', testing=True)
-        info = UserFeatureFlags.objects.create(user=user, flag=flag, is_active=False)
+        UserFeatureFlags.objects.create(user=user, flag=flag, is_active=False)
 
         request = get()
         request.user = user
@@ -120,7 +120,7 @@ class UserFeatureFlagTests(TestCase):
         """Test the 'staff' switch overrides the flag value of a staff user"""
         user = User.objects.create(username='foo', is_staff=True)
         flag = Flag.objects.create(name='myflag')
-        info = UserFeatureFlags.objects.create(user=user, flag=flag, is_active=False)
+        UserFeatureFlags.objects.create(user=user, flag=flag, is_active=False)
 
         request = get()
         request.user = user

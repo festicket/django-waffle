@@ -3,7 +3,7 @@ from django.test import RequestFactory
 
 from test_app import views
 
-from waffle import flag_is_excluded
+from waffle import flag_is_excluded, set_excluded
 from waffle.middleware import WaffleMiddleware
 from waffle.models import Flag, UserFeatureFlags
 from waffle.tests.base import TestCase
@@ -237,3 +237,35 @@ class UserFeatureFlagExcludedAndActiveTests(TestCase):
         request.user = user
         resp = process_request(request, views.flag_excluded_in_view)
         self.assertEqual(resp.content, "excluded")
+
+
+class UserFeatureFlagSetExcludedTests(TestCase):
+
+    def test_excluded_false_by_default(self):
+        """Test that calling set_excluded() on a non-existent flag will return WAFFLE_FLAG_DEFAULT setting."""
+        user = User.objects.create(username='foo')
+
+        request = get()
+        request.user = user
+
+        set_excluded(request, 'myflag')
+
+        response = process_request(request, views.flag_excluded_in_view)
+        self.assertEqual(b'not excluded', response.content)
+        self.assertFalse('dwfx_myflag' in response.cookies)
+
+    def test_no_cookies_set_when_flag_doesnt_exist(self):
+        user = User.objects.create(username='foo')
+
+        request = get()
+        request.user = user
+
+        set_excluded(request, 'myflag')
+        response = process_request(request, views.flag_excluded_in_view)
+        self.assertEqual(0, len(response.cookies))
+
+        response = process_request(request, views.flag_in_view)
+        self.assertEqual(0, len(response.cookies))
+
+
+
