@@ -20,10 +20,37 @@ disable_for_all.short_description = 'Disable selected flags for everyone.'
 
 
 class FlagAdmin(admin.ModelAdmin):
+
+    def get_queryset(self, request):
+        return super(FlagAdmin, self).get_queryset(request)\
+            .extra(select = {'active_user_count': '''SELECT count(*)
+                                                     FROM waffle_userfeatureflags uff
+                                                     WHERE uff.flag_id = id
+                                                     AND uff.is_active = TRUE
+                                                     AND uff.is_excluded = TRUE''',
+                             'inactive_user_count': '''SELECT count(*)
+                                                     FROM waffle_userfeatureflags uff
+                                                     WHERE uff.flag_id = id
+                                                     AND uff.is_active = FALSE
+                                                     AND uff.is_excluded = TRUE''',
+                             'excluded_user_count': '''SELECT count(*)
+                                                     FROM waffle_userfeatureflags uff
+                                                     WHERE uff.flag_id = id
+                                                     AND uff.is_excluded = TRUE'''})
+
+    def active_user_count(self, obj):
+        return obj.active_user_count
+
+    def inactive_user_count(self, obj):
+        return obj.inactive_user_count
+
+    def excluded_user_count(self, obj):
+        return obj.excluded_user_count
+
     actions = [enable_for_all, disable_for_all]
     date_hierarchy = 'created'
-    list_display = ('name', 'note', 'everyone', 'percent', 'superusers',
-                    'staff', 'authenticated', 'languages')
+    list_display = ('name', 'note', 'everyone', 'percent', 'superusers', 'staff', 'authenticated', 'languages',
+                    'active_user_count', 'inactive_user_count', 'excluded_user_count')
     list_filter = ('everyone', 'superusers', 'staff', 'authenticated')
     raw_id_fields = ('users', 'groups')
     ordering = ('-id',)
