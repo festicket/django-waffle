@@ -3,7 +3,7 @@ from django.shortcuts import render_to_response, render
 from django.template import Context, RequestContext
 from django.template.loader import render_to_string
 
-from waffle import flag_is_active, flag_is_excluded
+from waffle import flag_is_active, flag_is_excluded, set_excluded
 from waffle.decorators import waffle_flag, waffle_switch
 
 
@@ -14,8 +14,12 @@ def flag_in_view(request):
 
 def flag_excluded_in_view(request):
     if flag_is_excluded(request, 'myflag'):
-        return HttpResponse('yes')
-    return HttpResponse('no')
+        return HttpResponse('excluded')
+    return HttpResponse('not excluded')
+
+def exclude_user(request):
+    set_excluded(request, 'myflag')
+    return HttpResponse('user excluded')
 
 
 def flag_in_jingo(request):

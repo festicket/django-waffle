@@ -1,12 +1,9 @@
-import random
-
-from django.contrib.auth.models import AnonymousUser, Group, User
+from django.contrib.auth.models import AnonymousUser, User
 from django.test import RequestFactory
-from django.test.utils import override_settings
-import mock
 
-from waffle import flag_is_active, flag_is_excluded
 from test_app import views
+
+from waffle import flag_is_excluded
 from waffle.middleware import WaffleMiddleware
 from waffle.models import Flag, UserFeatureFlags
 from waffle.tests.base import TestCase
@@ -24,6 +21,22 @@ def process_request(request, view):
 
 
 class UserFeatureFlagExcludedTests(TestCase):
+
+    def test_excluded_false_by_default(self):
+        """Test that a flag is not excluded by default for a user."""
+        user = User.objects.create(username='foo')
+        Flag.objects.create(name='myflag', percent=50.0)
+
+        with self.assertRaises(UserFeatureFlags.DoesNotExist):
+            UserFeatureFlags.objects.get(user=user)
+
+        request = get()
+        request.user = user
+
+        flag_is_excluded(request, 'myflag')
+        info = UserFeatureFlags.objects.get(user=user)
+
+        self.assertFalse(info.is_excluded)
 
     def test_cookie_set_and_user_not_set(self):
         """Test that the excluded value for an authenticated user is set to the same value as the flag's cookie
@@ -92,7 +105,7 @@ class UserFeatureFlagExcludedTests(TestCase):
 
 class UserFeatureFlagExcludedAndActiveTests(TestCase):
     def test_excluded_set_before_active(self):
-        """???"""
+        """Test that flag_is_excluded can be called before flag_is_active"""
         user = User.objects.create(username='foo')
         Flag.objects.create(name='myflag', percent=50.0)
 
@@ -117,7 +130,7 @@ class UserFeatureFlagExcludedAndActiveTests(TestCase):
         self.assertIsNotNone(info.is_active)
 
     def test_active_set_before_excluded(self):
-        """???"""
+        """Test that flag_is_active can be called before flag_is_excluded"""
         user = User.objects.create(username='foo')
         Flag.objects.create(name='myflag', percent=50.0)
 
@@ -130,7 +143,6 @@ class UserFeatureFlagExcludedAndActiveTests(TestCase):
         resp = process_request(request, views.flag_in_view)
         self.assertTrue('dwfx_myflag' not in resp.cookies)
         self.assertTrue('dwf_myflag' in resp.cookies)
-
         info = UserFeatureFlags.objects.get(user=user)
         self.assertFalse(info.is_excluded)
         self.assertIsNotNone(info.is_active)
@@ -138,9 +150,90 @@ class UserFeatureFlagExcludedAndActiveTests(TestCase):
         resp = process_request(request, views.flag_excluded_in_view)
         self.assertTrue('dwfx_myflag' in resp.cookies)
         self.assertTrue('dwf_myflag' in resp.cookies)
+        info = UserFeatureFlags.objects.get(user=user)
+        self.assertFalse(info.is_excluded)
+        self.assertIsNotNone(info.is_active)
 
-    #test a anonymous user can be set to excluded and it persists
+    def test_anonymous_user_excluded(self):
+        """Test an anonymous user can be set to excluded and it persists via cookies"""
+        Flag.objects.create(name='myflag', percent=50.0)
 
-    #test if a anonymous user is excluded, a user with no flag value will also become excluded
+        request = get()
+        request.user = AnonymousUser()
 
-    #test if a user is not excluded, then an anonymous user gets excluded, then the user will be excluded
+        resp = process_request(request, views.flag_excluded_in_view)
+        self.assertEqual(resp.content, "not excluded")
+        self.assertTrue('dwfx_myflag' in resp.cookies)
+        self.assertEqual('False', resp.cookies['dwfx_myflag'].value)
+
+        request = get()
+        request.user = AnonymousUser()
+        for k in resp.cookies:
+            request.COOKIES[k] = resp.cookies[k].value
+
+        resp = process_request(request, views.exclude_user)
+        self.assertTrue('dwfx_myflag' in resp.cookies)
+        self.assertEqual('True', resp.cookies['dwfx_myflag'].value)
+
+        request = get()
+        request.user = AnonymousUser()
+        for k in resp.cookies:
+            request.COOKIES[k] = resp.cookies[k].value
+
+        resp = process_request(request, views.flag_excluded_in_view)
+        self.assertEqual(resp.content, "excluded")
+        self.assertTrue('dwfx_myflag' in resp.cookies)
+        self.assertEqual('True', resp.cookies['dwfx_myflag'].value)
+
+    def test_excluded_anon_user_makes_logged_in_user_excluded(self):
+        """Test if a anonymous user is excluded, a user with no excluded flag value will also become excluded"""
+        Flag.objects.create(name='myflag', percent=50.0)
+
+        request = get()
+        request.user = AnonymousUser()
+
+        resp = process_request(request, views.exclude_user)
+        self.assertEqual('True', resp.cookies['dwfx_myflag'].value)
+
+        user = User.objects.create(username='foo')
+        request = get()
+        request.user = user
+        for k in resp.cookies:
+            request.COOKIES[k] = resp.cookies[k].value
+
+        resp = process_request(request, views.flag_excluded_in_view)
+        self.assertEqual(resp.content, "excluded")
+        self.assertTrue('dwfx_myflag' in resp.cookies)
+        self.assertEqual('True', resp.cookies['dwfx_myflag'].value)
+        self.assertTrue(UserFeatureFlags.objects.get(user=user).is_excluded)
+
+    def test_user_gets_excluded_by_exclude_cookie(self):
+        """Test if a user is not excluded, then an anonymous user gets excluded, then the user will become excluded"""
+        user = User.objects.create(username='foo')
+        Flag.objects.create(name='myflag', percent=50.0)
+
+        request = get()
+        request.user = user
+
+        resp = process_request(request, views.flag_excluded_in_view)
+        self.assertEqual(resp.content, "not excluded")
+
+        request = get()
+        request.user = AnonymousUser()
+        for k in resp.cookies:
+            request.COOKIES[k] = resp.cookies[k].value
+
+        resp = process_request(request, views.exclude_user)
+
+        request = get()
+        request.user = user
+        for k in resp.cookies:
+            request.COOKIES[k] = resp.cookies[k].value
+
+        resp = process_request(request, views.flag_excluded_in_view)
+        self.assertEqual(resp.content, "excluded")
+
+        request = get()
+        request.user = user
+        resp = process_request(request, views.flag_excluded_in_view)
+        self.assertEqual(resp.content, "excluded")

@@ -19,6 +19,11 @@ def flag_is_excluded(request, flag_name):
     from .models import cache_flag, Flag, UserFeatureFlags
     from .compat import cache
 
+    if not hasattr(request, 'waffle_excludes'):
+        request.waffle_excludes = {}
+    elif flag_name in request.waffle_excludes:
+        return request.waffle_excludes[flag_name]
+
     flag = cache.get(keyfmt(get_setting('FLAG_CACHE_KEY'), flag_name))
     if flag is None:
         try:
