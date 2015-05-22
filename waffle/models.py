@@ -61,6 +61,10 @@ class Flag(models.Model):
 
 
 class UserFeatureFlags(models.Model):
+    """A through table for Flag and User
+
+    Store active and excluded state of flag per user.
+    """
     user = models.ForeignKey(AUTH_USER_MODEL)
     flag = models.ForeignKey(Flag)
     is_active = models.NullBooleanField()
