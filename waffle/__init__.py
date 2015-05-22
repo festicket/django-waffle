@@ -1,3 +1,4 @@
+from collections import namedtuple
 from decimal import Decimal
 import random
 
@@ -13,6 +14,25 @@ class DoesNotExist(object):
     @property
     def active(self):
         return get_setting('SWITCH_DEFAULT')
+
+
+def get_flags_for_user(user):
+    """
+    return a list of all flags that a user has triggered
+    """
+    from .models import cache_flag, Flag, UserFeatureFlags
+
+    user_flag = namedtuple('UserFlag', ['flag_name', 'is_active', 'is_excluded'])
+
+    if not user.is_authenticated():
+        return None
+    flags = UserFeatureFlags.objects.filter(user=user)
+    user_flags = [user_flag(
+        flag_name=f.flag.name,
+        is_active=f.is_active,
+        is_excluded=f.is_excluded
+    ) for f in flags]
+    return user_flags
 
 
 def flag_is_excluded(request, flag_name):
@@ -110,7 +130,7 @@ def set_flag(request, flag_name, active=True, session_only=False):
             user=request.user, flag=flag, defaults={'is_active': active}
         )
         if not created and userFlagInfo.is_active != active:
-            userFlagInfo.is_active=active
+            userFlagInfo.is_active = active
             userFlagInfo.save()
 
 
@@ -160,11 +180,11 @@ def flag_is_active(request, flag_name):
     if flag.languages:
         languages = flag.languages.split(',')
         if (hasattr(request, 'LANGUAGE_CODE') and
-                request.LANGUAGE_CODE in languages):
+                    request.LANGUAGE_CODE in languages):
             return True
 
     flag_users = cache.get(keyfmt(get_setting('FLAG_USERS_CACHE_KEY'),
-                                              flag.name))
+                                  flag.name))
     if flag_users is None:
         flag_users = flag.users.all()
         cache_flag(instance=flag)

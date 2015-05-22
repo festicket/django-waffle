@@ -5,7 +5,7 @@ from django.test import RequestFactory
 from django.test.utils import override_settings
 import mock
 
-from waffle import flag_is_active
+from waffle import flag_is_active, get_flags_for_user
 from test_app import views
 from waffle.middleware import WaffleMiddleware
 from waffle.models import Flag, UserFeatureFlags
@@ -218,7 +218,7 @@ class UserFeatureFlagCookieTests(TestCase):
         the cookie value should be overridden by the value on the user."""
         user = User.objects.create(username='foo')
         flag = Flag.objects.create(name='myflag', percent=50.0)
-        info = UserFeatureFlags.objects.create(user=user, flag=flag, is_active=False)
+        UserFeatureFlags.objects.create(user=user, flag=flag, is_active=False)
 
         request = get()
         request.user = user
@@ -265,3 +265,32 @@ class UserFeatureFlagCookieTests(TestCase):
         uniform.return_value = '70'  # > 50. Flag is False.
         flag_is_active(request, 'myflag')
         self.assertFalse(UserFeatureFlags.objects.get(user=user).is_active)
+
+
+class UserFeatureFlagGetFlagsForUser(TestCase):
+
+    def test_get_flags_for_user(self):
+        """test the get_flags_for_user() function"""
+        user = User.objects.create(username='foo')
+        flag = Flag.objects.create(name='myflag', percent=50.0)
+        UserFeatureFlags.objects.create(user=user, flag=flag, is_active=False)
+
+        flags = get_flags_for_user(user)
+
+        self.assertEqual(len(flags), 1)
+        self.assertEqual(flags[0].flag_name, 'myflag')
+        self.assertEqual(flags[0].is_active, False)
+        self.assertEqual(flags[0].is_excluded, False)
+
+    def test_get_flags_for_anonymous_user(self):
+        """test the get_flags_for_user() function returns None for Anonymous user"""
+        Flag.objects.create(name='myflag', percent=50.0)
+        user = AnonymousUser()
+
+        request = get()
+        request.user = user
+        process_request(request, views.flag_in_view)
+
+        flags = get_flags_for_user(user)
+
+        self.assertIsNone(flags)
