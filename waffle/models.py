@@ -68,6 +68,7 @@ class UserFeatureFlags(models.Model):
 
     class Meta:
         unique_together = ('user', 'flag',)
+        verbose_name_plural = "Users' Feature Flags"
 
 
 class Switch(models.Model):

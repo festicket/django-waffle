@@ -57,7 +57,7 @@ class FlagAdmin(admin.ModelAdmin):
 
 
 class UserFeatureFlagsAdmin(admin.ModelAdmin):
-    list_display = 'user', 'flag', 'is_active'
+    list_display = 'user', 'flag', 'is_active', 'is_excluded'
     raw_id_fields = ('user',)
 
 
