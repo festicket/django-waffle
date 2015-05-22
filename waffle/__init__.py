@@ -30,7 +30,7 @@ def flag_is_excluded(request, flag_name):
             flag = Flag.objects.get(name=flag_name)
             cache_flag(instance=flag)
         except Flag.DoesNotExist:
-            return get_setting('FLAG_DEFAULT')
+            return False
 
     flag_excluded_on_cookie = None
     flag_excluded_on_user = None

@@ -241,8 +241,18 @@ class UserFeatureFlagExcludedAndActiveTests(TestCase):
 
 class UserFeatureFlagSetExcludedTests(TestCase):
 
+    def test_flag_excluded_false_when_flag_doesnt_exist(self):
+        """Test calling flag_is_excluded() return false if a flag with that name does not exist."""
+        request = get()
+        request.user = User.objects.create(username='foo')
+        self.assertFalse(flag_is_excluded(request, 'non_existent_flag'))
+
+        request = get()
+        request.user = AnonymousUser
+        self.assertFalse(flag_is_excluded(request, 'non_existent_flag'))
+
     def test_excluded_false_by_default(self):
-        """Test that calling set_excluded() on a non-existent flag will return WAFFLE_FLAG_DEFAULT setting."""
+        """Test that calling set_excluded() on a non-existent flag will have no effect"""
         user = User.objects.create(username='foo')
 
         request = get()
@@ -255,6 +265,7 @@ class UserFeatureFlagSetExcludedTests(TestCase):
         self.assertFalse('dwfx_myflag' in response.cookies)
 
     def test_no_cookies_set_when_flag_doesnt_exist(self):
+        """Test no cookies are made for a flag that doesn't exist."""
         user = User.objects.create(username='foo')
 
         request = get()
