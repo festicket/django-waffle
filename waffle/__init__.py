@@ -37,7 +37,10 @@ def get_flags_for_user(user):
 
 def flag_is_excluded(request, flag_name):
     '''
-    Mark a flag as being excluded for a user.
+    Returns True or False, whether a flag is excluded for a user or not.
+    Returns False if a flag doesn't exist.
+
+    Will also set flag as excluded (on cookie and authenticated user) if certain conditions are met.
     '''
     from .models import cache_flag, Flag, UserFeatureFlags
     from .compat import cache
@@ -89,7 +92,7 @@ def set_excluded(request, flag_name, excluded=True):
     '''
     Mark a flag as being excluded for a user/request.
 
-     Sets a cookie and if user is logged in it will also save the excluded value in UserFeatureFlags model.
+    Sets a cookie, and if user is logged in it will also save the excluded value in UserFeatureFlags model.
     Does nothing if flag doesn't exist.
     '''
     from .compat import cache
@@ -118,6 +121,12 @@ def set_excluded(request, flag_name, excluded=True):
 
 
 def flag_is_active(request, flag_name):
+    '''
+    Returns True or False, whether a flag is active for a user or not.
+    Returns get_setting('FLAG_DEFAULT') if a flag doesn't exist.
+
+    Will also set flag as active or inactive (on cookie and authenticated user) if certain conditions are met.
+    '''
     from .models import cache_flag, Flag, UserFeatureFlags
     from .compat import cache
 

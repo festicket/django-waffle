@@ -21,31 +21,14 @@ disable_for_all.short_description = 'Disable selected flags for everyone.'
 
 class FlagAdmin(admin.ModelAdmin):
 
-    def get_queryset(self, request):
-        return super(FlagAdmin, self).get_queryset(request)\
-            .extra(select = {'active_user_count': '''SELECT count(*)
-                                                     FROM waffle_userfeatureflags uff
-                                                     WHERE uff.flag_id = id
-                                                     AND uff.is_active = TRUE
-                                                     AND uff.is_excluded = TRUE''',
-                             'inactive_user_count': '''SELECT count(*)
-                                                     FROM waffle_userfeatureflags uff
-                                                     WHERE uff.flag_id = id
-                                                     AND uff.is_active = FALSE
-                                                     AND uff.is_excluded = TRUE''',
-                             'excluded_user_count': '''SELECT count(*)
-                                                     FROM waffle_userfeatureflags uff
-                                                     WHERE uff.flag_id = id
-                                                     AND uff.is_excluded = TRUE'''})
-
     def active_user_count(self, obj):
-        return obj.active_user_count
+        return UserFeatureFlags.objects.filter(flag__id=obj.id).filter(is_excluded=False).filter(is_active=True).count()
 
     def inactive_user_count(self, obj):
-        return obj.inactive_user_count
+        return UserFeatureFlags.objects.filter(flag__id=obj.id).filter(is_excluded=False).filter(is_active=False).count()
 
     def excluded_user_count(self, obj):
-        return obj.excluded_user_count
+        return UserFeatureFlags.objects.filter(flag__id=obj.id).filter(is_excluded=True).count()
 
     actions = [enable_for_all, disable_for_all]
     date_hierarchy = 'created'
