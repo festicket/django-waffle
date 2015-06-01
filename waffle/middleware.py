@@ -29,6 +29,6 @@ class WaffleMiddleware(object):
             for k in request.waffle_excludes:
                 name = smart_str(get_setting('EXCLUDED_COOKIE') % k)
                 value = request.waffle_excludes[k]
-                response.set_cookie(name, value=value)
+                response.set_cookie(name, value=value, max_age=max_age, secure=secure)
 
         return response
